@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -39,19 +40,13 @@ class ProductController extends Controller
      */
     public function show($id)
     {
-        try {
-            $product = Product::findOrFail($id);
-        } catch (\Exception $exception) {
-            return response()->json(['message' => "The requested product wasn't found"]);
-        }
-
-        return $product;
+        return $this->getProduct($id);
     }
 
     /**
      * @param Request $request
      * @param $id
-     * @return mixed
+     * @return JsonResponse
      */
     public function update(Request $request, $id)
     {
@@ -63,23 +58,42 @@ class ProductController extends Controller
             ]
         );
 
+        $product = $this->getProduct($id);
+
+        if ($product->update($validatedData) == true) {
+            return response()->json(['message' => "The product has been updated"]);
+        }
+
+        return response()->json(['message' => "There was a problem while updating the product"]);
+    }
+
+    /**
+     * @param $id
+     * @return JsonResponse
+     */
+    public function destroy($id)
+    {
+        $product = $this->getProduct($id);
+
+        if ($product->delete() == true) {
+            return response()->json(['message' => "The product has been deleted"]);
+        }
+
+        return response()->json(['message' => "There was a problem while deleting the product"]);
+    }
+
+    /**
+     * @param $id
+     * @return mixed
+     */
+    private function getProduct($id)
+    {
         try {
             $product = Product::findOrFail($id);
         } catch (\Exception $exception) {
             return response()->json(['message' => "The requested product wasn't found"]);
         }
 
-        return $product->update($validatedData);
-    }
-
-    /**
-     * @param $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function destroy($id)
-    {
-        $product = Product::findOrFail($id);
-        $product->delete();
-        return response()->json(['message'=>'Product Deleted Successfully.']);
+        return $product;
     }
 }
